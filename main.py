@@ -2,31 +2,53 @@
 print("==============================")
 print("Programme gestion des graphes:")
 print("==============================")
-print("(1) Construction d'un graphe orienté/non orienté")#! oriente
-print("(2) Affichage du graphe") #! memoire
-print("(3) Calculer la densité du graphe")
-print("(4) Calculer le degré du graphe")
-print("(5) Vérifier si le graphe est eulérien")
-print("(6) Vérifier si le graphe est complet")
-print("(7) Trouver un sous-graphe complet maximal")
-print("(8) Recherche de tous les chemins entre un nœud a et un nœud b")
-print("(9) Recherche du chemin le plus court entre deux nœuds a et b")
+print("(1) Construction d'un graphe orienté/non orienté")
+print("(2) Affichage du graphe")
+print("(3) Calculer la densité du graphe")#!
+print("(4) Calculer le degré du graphe")#!
+print("(5) Vérifier si le graphe est eulérien")#!
+print("(6) Vérifier si le graphe est complet")#!
+print("(7) Trouver un sous-graphe complet maximal")#!
+print("(8) Recherche de tous les chemins entre un nœud a et un nœud b")#!
+print("(9) Recherche du chemin le plus court entre deux nœuds a et b")#!
 print("(10) Recherche de composantes (fortement) connexes à partir d'un nœud a.")#!
 print("(11) Recherche des composantes 4-connexes dans le graphe")#!
 print("(12) Trouver tous les cycles/circuits dans le graph")#!
 
-class Graph_non_oriente:
-    def __init__(self):
-        self.listeAdj={}
+class Graph:
+    def __init__(self, oriente = False):
+        self.listeAdj = {}
+        self.oriente = oriente
 
     def ajoutSommet(self,s):
         if s not in self.listeAdj.keys():
-            self.listeAdj[s]=set() # creer un sommet et garder l'unicite de chaque element
+            if self.oriente == False:
+                self.listeAdj[s]=set() # creer un sommet et garder l'unicite de chaque element
+            else:
+                self.listeAdj[s]={'succ':set(),'pred':set()}
 
-    def ajoutArete(self,p,s):
+    def ajoutLien(self,p,s):
         if p and s in self.listeAdj.keys():
-            self.listeAdj[p].add(s)
-            self.listeAdj[s].add(p)
+            if self.oriente == False:
+                self.listeAdj[p].add(s)
+                self.listeAdj[s].add(p)
+            else:
+                self.listeAdj[p]['succ'].add(s)
+                self.listeAdj[s]['pred'].add(p)
+
+    def afficherListeAdj(self):
+        """
+        Affiche la représentation mémoire d'un graphe sous forme de liste d'adjacence.
+        
+        :param graph: dict, représentation du graphe
+        """
+        print("Représentation du Graphe :")
+        if self.oriente == False:
+            for node, neighbors in self.listeAdj.items():
+                print(f"{node} -> {', '.join(neighbors)}")
+        else:
+            for node, neighbors in self.listeAdj.items():
+                print(f"{node} -> {', '.join(neighbors['succ'])}") 
 
     def afficherGraphe(self):
         # Importer les bibliothèques pour l'affichage
@@ -66,31 +88,31 @@ class Graph_non_oriente:
         plt.show()
 
     def densiteGraphe(self):
-        """
-        Calcule la densité d'un graphe.
-        
-        :param graph: dict, le graphe représenté sous forme d'adjacence {node: {neighbors}}
-        :param directed: bool, True si le graphe est orienté, False sinon
-        :return: float, la densité du graphe
-        """
-        num_nodes = len(self.listeAdj.keys())
-        if num_nodes <= 1:
+
+        ordre_graphe = len(self.listeAdj.keys()) # calculer le degree du graphe avec la fonction longueur
+        if ordre_graphe <= 1:
             # Si un seul nœud ou aucun, densité = 0
-            return 0.0
+            return 0
         
         # Calcul du nombre d'arêtes
-        num_edges = sum(len(neighbors) for neighbors in self.listeAdj.values())
-        num_edges //= 2
+        for voisins in self.listeAdj.values():
+            num_aretes = num_aretes + len(voisins) # calculer la somme des aretes
+        num_aretes = num_aretes // 2 # diviser le nombre d'arete sur 2
         
         # Calcul de la densité
-        max_possible_edges = num_nodes * (num_nodes - 1)
-        max_possible_edges //= 2  # Graphe non orienté
+        max_possible_aretes = ordre_graphe * (ordre_graphe - 1)
+        max_possible_aretes = max_possible_aretes // 2  # Graphe non orienté
         
-        density = num_edges / max_possible_edges
-        return density
+        densite = num_aretes / max_possible_aretes
+        return densite
 
     def degreeGraphe(self):
-        return max(i for i in(len(i) for i in self.listeAdj.values()))
+        degree = 0
+        for i in self.listeAdj.values():
+            num_aretes = len(i)
+            if(degree < num_aretes):
+                degree = num_aretes
+        return degree
 
     def grapheEulerien(self):
 
@@ -268,6 +290,55 @@ class Graph_non_oriente:
         
         return [list(cycle) for cycle in unique_cycles]
 
+    def find_k_connected_components(self, k):
+        """
+        Trouve les composantes k-connexes dans un graphe non orienté.
+        
+        :param graph: dict, représentation du graphe sous forme de liste d'adjacence
+        :param k: int, degré de connexion minimum requis
+        :return: list, liste des composantes k-connexes
+        """
+        graph=self.listeAdj
+        def dfs(node, visited):
+            """
+            Effectue une recherche DFS pour identifier une composante connexe.
+            
+            :param node: noeud actuel
+            :param visited: ensemble des nœuds déjà visités
+            :return: list, la composante connexe trouvée
+            """
+            stack = [node]
+            component = []
+            
+            while stack:
+                current = stack.pop()
+                if current not in visited:
+                    visited.add(current)
+                    component.append(current)
+                    stack.extend(graph[current] - visited)
+            
+            return component
+
+        # Étape 1 : Trouver toutes les composantes connexes
+        visited = set()
+        components = []
+        for node in graph:
+            if node not in visited:
+                component = dfs(node, visited)
+                components.append(component)
+
+        # Étape 2 : Filtrer les composantes k-connexes
+        k_connected_components = []
+        for component in components:
+            # Construire le sous-graphe de la composante
+            subgraph = {n: graph[n] & set(component) for n in component}
+            
+            # Vérifier si chaque nœud a au moins k connexions
+            if all(len(neighbors) >= k for neighbors in subgraph.values()):
+                k_connected_components.append(component)
+
+        return k_connected_components
+
 
 
 #! class Graph_oriente:
@@ -296,9 +367,18 @@ def constGraph():
     Fonction pour construire un graphe à partir de l'entrée utilisateur.
     Retourne un graphe sous forme de dictionnaire d'adjacence.
     """
-    print("Construisez votre graphe non orienté :")
-    
-    graph = Graph_non_oriente()
+    type = input("Choisir le type du graphe :\n* Oriente :1\n* Non oriente: 0\n")
+    while type != '1' and type != '0':
+        type = input("choix non valide entrer 1 ou 0 svp :")
+    if type == '1':
+        print("Construisez votre graphe orienté :")
+        oriente = True
+    else:
+        print("Construisez votre graphe non orienté :")
+        oriente = False
+
+
+    graph = Graph(oriente)
 
     # Nombre de sommets
     num_nodes = int(input("Entrez le nombre de sommets : "))
@@ -314,7 +394,7 @@ def constGraph():
     for _ in range(num_edges):
         u, v = input("- Arête : ").strip().split()
         if u in graph.listeAdj.keys() and v in graph.listeAdj.keys():
-            graph.ajoutArete(u,v)
+            graph.ajoutLien(u,v)
         else:
             print(f"Erreur : {u} ou {v} n'existe pas. Réessayez.")
     return graph
@@ -323,7 +403,7 @@ def constGraph():
 
 
 # Exemple d'utilisation
-graph1,graph2=Graph_non_oriente(),Graph_non_oriente()
+graph1,graph2=Graph(False),Graph(False)
 
 graph1.listeAdj = {
     'A': {'B', 'C', 'D'},
@@ -339,7 +419,7 @@ graph2.listeAdj = {
     'D': {'C'}
 }
 
-graph=Graph_non_oriente()
+graph=Graph(False)
 
 graph.listeAdj = {
     'A': {'B', 'C'},
@@ -355,7 +435,7 @@ graph.listeAdj = {
 
 
 # Exemple d'utilisation
-g=Graph_non_oriente()
+g=Graph(False)
 g.listeAdj = {
     'A': {'B', 'C'},
     'B': {'A', 'D', 'E'},
@@ -377,7 +457,7 @@ g.listeAdj = {
 
 
 # Exemple d'utilisation
-graph3=Graph_non_oriente()
+graph3=Graph(False)
 graph3.listeAdj = {
     'A': {'B', 'C'},
     'B': {'A', 'C', 'D'},
@@ -391,11 +471,22 @@ graph3.listeAdj = {
 # for cycle in cycles:
 #     print(" -> ".join(cycle))
 
-# Importing required module
-import subprocess
 
-# Using system() method to
-# execute shell commands
-subprocess.Popen('clear', shell=True)
+# Exemple d'utilisation
+graph4=Graph(False)
+graph4.listeAdj = {
+    'A': {'B', 'C', 'D', 'E'},
+    'B': {'A', 'C', 'D'},
+    'C': {'A', 'B', 'D'},
+    'D': {'A', 'B', 'C', 'E'},
+    'E': {'A', 'D'}
+}
 
-graph3.afficherGraphe()
+# k = 4  # Niveau de connexité recherché
+# k_connected = graph4.find_k_connected_components(k)
+
+# print(f"Composantes {k}-connexes :")
+# for component in k_connected:
+#     print(component)
+
+# graph3.afficherGraphe()
