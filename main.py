@@ -4,13 +4,13 @@ print("Programme gestion des graphes:")
 print("==============================")
 print("(1) Construction d'un graphe orienté/non orienté")
 print("(2) Affichage du graphe")
-print("(3) Calculer la densité du graphe")#!
-print("(4) Calculer le degré du graphe")#!
-print("(5) Vérifier si le graphe est eulérien")#!
-print("(6) Vérifier si le graphe est complet")#!
-print("(7) Trouver un sous-graphe complet maximal")#!
-print("(8) Recherche de tous les chemins entre un nœud a et un nœud b")#!
-print("(9) Recherche du chemin le plus court entre deux nœuds a et b")#!
+print("(3) Calculer la densité du graphe")
+print("(4) Calculer le degré du graphe")
+print("(5) Vérifier si le graphe est eulérien")
+print("(6) Vérifier si le graphe est complet")
+print("(7) Trouver un sous-graphe complet maximal")
+print("(8) Recherche de tous les chemins entre un nœud a et un nœud b")
+print("(9) Recherche du chemin le plus court entre deux nœuds a et b")
 print("(10) Recherche de composantes (fortement) connexes à partir d'un nœud a.")#!
 print("(11) Recherche des composantes 4-connexes dans le graphe")#!
 print("(12) Trouver tous les cycles/circuits dans le graph")#!
@@ -94,107 +94,141 @@ class Graph:
             # Si un seul nœud ou aucun, densité = 0
             return 0
         
-        # Calcul du nombre d'arêtes
-        for voisins in self.listeAdj.values():
-            num_aretes = num_aretes + len(voisins) # calculer la somme des aretes
-        num_aretes = num_aretes // 2 # diviser le nombre d'arete sur 2
-        
         # Calcul de la densité
         max_possible_aretes = ordre_graphe * (ordre_graphe - 1)
-        max_possible_aretes = max_possible_aretes // 2  # Graphe non orienté
         
+        # Calcul du nombre d'arêtes
+        num_aretes = 0
+        for voisins in self.listeAdj.values():
+            if(self.oriente == False):
+                num_aretes = num_aretes + len(voisins) # calculer la somme des aretes
+                num_aretes = num_aretes // 2 # diviser le nombre d'arete sur 2
+                max_possible_aretes = max_possible_aretes // 2  # Graphe non orienté
+            else:
+                num_aretes = num_aretes + len(voisins['succ'])
+
         densite = num_aretes / max_possible_aretes
         return densite
 
     def degreeGraphe(self):
-        degree = 0
-        for i in self.listeAdj.values():
-            num_aretes = len(i)
+        degree = 0 # initialise le degree a 0
+        for i in self.listeAdj.values(): # boucler sur les liste des voisins
+            if self.oriente == False:
+                num_aretes = len(i) # calculer le nombre d'aretes
+            else:
+                num_aretes = len(i['succ']) + len(i['pred']) # nombre d'arcs pour graphe non oriente
             if(degree < num_aretes):
-                degree = num_aretes
+                degree = num_aretes # determiner si le degree de cette sommet est le degre du graphe
         return degree
 
-    def grapheEulerien(self):
+    def est_eulerian(self):
+        graph = self.listeAdj
+        def est_connecte_oriente(graph):
+            """
+            Vérifie si un graphe orienté est fortement connexe.
+            """
+            def dfs(node, visite, direction):
+                visite.add(node)
+                for neighbor in graph[node][direction]:
+                    if neighbor not in visite:
+                        dfs(neighbor, visite, direction)
 
-        def is_connected(graph):
-            """Vérifie si un graphe non orienté est connexe."""
-            visited = set()
             nodes = list(graph.keys())
-            
-            def dfs(node):
-                if node not in visited:
-                    visited.add(node)
-                    for neighbor in graph[node]:
-                        dfs(neighbor)
-            
-            dfs(nodes[0])
-            return len(visited) == len(nodes)
-
-        def is_eulerian(graph):
-            """Vérifie si un graphe non orienté est eulérien."""
-            # Vérifier la connectivité
-            if not is_connected(graph):
+            # Vérification dans la direction 'succ'
+            visite = set()
+            dfs(nodes[0], visite, 'succ')
+            if len(visite) != len(graph):
                 return False
-            
-            # Vérifier si tous les sommets ont un degré pair
-            for node, neighbors in graph.items():
-                if len(neighbors) % 2 != 0:
-                    return False
-            
+
+            # Vérification dans la direction 'pred'
+            visite = set()
+            dfs(nodes[0], visite, 'pred')
+            if len(visite) != len(graph):
+                return False
+
             return True
 
-        if is_eulerian(self.listeAdj):
-            print("Le graphe est eulérien.")
+        def est_connecte(graph):
+            """
+            Vérifie si un graphe non orienté est connexe.
+            """
+            visite = set()
+
+            def dfs(node):
+                visite.add(node)
+                for voisin in graph[node]:
+                    if voisin not in visite:
+                        dfs(voisin)
+
+            nodes = list(graph.keys())
+            dfs(nodes[0])
+            return len(visite) == len(graph)
+
+        # Pour les graphes orientés
+        if self.oriente == True:
+            # Vérification de la forte connexité
+            if not est_connecte_oriente(graph): # verifier si le graphe est fortement connecte
+                return False
+
+            # Vérification des degrés entrants = degrés sortants
+            for node, aretes in graph.items():
+                if len(aretes['succ']) != len(aretes['pred']): # verifier si chaque noeud a un degree pair
+                    return False
+
             return True
+
+        # Pour les graphes non orientés
         else:
-            print("Le graphe n'est pas eulérien.")
-            return False
+            # Vérification de la connexité
+            if not est_connecte(graph): # verifier si le graphe est fortement connecte
+                return False
+
+            # Vérification des degrés pairs
+            for node, voisins in graph.items():
+                if len(voisins) % 2 != 0: # verifier si chaque noeud a un degree pair
+                    return False
+
+            return True
 
     def estComplet(self):
-        """
-        Vérifie si un graphe non orienté est complet.
-        
-        :param graph: dict, représentation du graphe sous forme d'adjacence {sommet: {voisins}}
-        :return: bool, True si le graphe est complet, False sinon
-        """
         graph=self.listeAdj
-        num_nodes = len(graph)  # Nombre de sommets
+        num_nodes = len(graph.keys())  # Nombre de sommets
         
-        # Vérifier les connexions de chaque sommet
-        for node, neighbors in graph.items():
-            # Dans un graphe complet, chaque sommet doit être connecté à tous les autres sommets
-            if len(neighbors) != num_nodes - 1:
-                return False
-            
-            # Vérifier que tous les voisins sont dans les sommets du graphe
-            for neighbor in neighbors:
-                if neighbor not in graph:
+        # Un graphe avec 0 ou 1 sommet est complet par définition
+        if num_nodes <= 1:
+            return True
+
+        if self.oriente == True:
+            # Vérifier les connexions de chaque sommet
+            for node, voisins in graph.items():
+                # Dans un graphe complet, chaque sommet doit être connecté à tous les autres sommets
+                if len(voisins['succ']) != num_nodes - 1 or len(voisins['pred'] != num_nodes):
                     return False
-        
+        else:
+            # Vérifier les connexions de chaque sommet
+            for node, voisins in graph.items():
+                # Dans un graphe complet, chaque sommet doit être connecté à tous les autres sommets
+                if len(voisins) != num_nodes - 1:
+                    return False
         return True
 
     def sousGrapheComplet(self):
-        graph=self.listeAdj
+        graph = self.listeAdj
         from itertools import combinations
         def is_clique(graph, nodes):
-            """
-            Vérifie si un ensemble de sommets 'nodes' forme une clique.
-            
-            :param graph: dict, représentation du graphe sous forme de liste d'adjacence
-            :param nodes: list, ensemble de sommets à tester
-            :return: bool, True si c'est une clique, False sinon
-            """
             for i in range(len(nodes)):
                 for j in range(i + 1, len(nodes)):
-                    if nodes[j] not in graph[nodes[i]]:
-                        return False
+                    # Vérifier pour un graphe orienté
+                    if self.oriente == True:
+                        if nodes[j] not in graph[nodes[i]]['succ'] or \
+                            nodes[i] not in graph[nodes[j]]['pred']:
+                            return False
+                    else:
+                        # Vérifier pour un graphe non orienté
+                        if nodes[j] not in graph[nodes[i]]:
+                            return False
             return True
-        """
-        Trouve le plus grand sous-graphe complet (clique maximale).
-        
-        :param graph: dict, représentation du graphe sous forme de liste d'adjacence
-        :return: list, sommets de la clique maximale
-        """
+
         nodes = list(graph.keys())
         max_clique = []
         
@@ -206,59 +240,43 @@ class Graph:
         
         return max_clique
 
-    def find_all_paths(self, start, end, path=None):
-        graph=self.listeAdj
-        """
-        Trouve tous les chemins entre deux nœuds dans un graphe.
-        
-        :param graph: dict, représentation du graphe sous forme de liste d'adjacence
-        :param start: str, nœud de départ
-        :param end: str, nœud de destination
-        :param path: list, chemin actuel (utilisé dans la récursion)
-        :return: list, liste de tous les chemins
-        """
+    def find_all_paths(self, debut, fin, path=None):
+        graph = self.listeAdj
         if path is None:
             path = []
         
-        path = path + [start]  # Ajouter le nœud actuel au chemin
+        path = path + [debut]  # Ajouter le nœud actuel au chemin
         
         # Si le nœud de départ est le nœud de destination
-        if start == end:
+        if debut == fin:
             return [path]
         
         # Si le nœud de départ n'a pas de voisins
-        if start not in graph:
+        if debut not in graph:
             return []
         
         paths = []
-        for neighbor in graph[start]:
-            if neighbor not in path:  # Éviter les cycles
-                new_paths = self.find_all_paths(neighbor, end, path)
+
+        if self.oriente == True:
+            voisins = graph[debut]['succ']
+        else:
+            voisins = graph[debut]
+
+        for voisin in voisins:
+            if voisin not in path:  # Éviter les cycles
+                new_paths = self.find_all_paths(voisin, fin, path)
                 for new_path in new_paths:
                     paths.append(new_path)
         
         return paths
 
-    def cheminPlusCourt(self,start,end):
-        return min(self.find_all_paths(start,end),key=len)
+    def cheminPlusCourt(self,debut,fin):
+        return min(self.find_all_paths(debut,fin),key=len)
 
     def find_cycles(self):
-        """
-        Trouve tous les cycles dans un graphe non orienté.
-        
-        :param graph: dict, représentation du graphe sous forme de liste d'adjacence
-        :return: list, liste contenant tous les cycles trouvés
-        """
         graph=self.listeAdj
         def dfs(node, parent, visited, path):
-            """
-            Fonction récursive pour effectuer une recherche DFS et détecter les cycles.
-            
-            :param node: noeud actuel
-            :param parent: noeud parent (évite les cycles bidirectionnels dans les graphes non orientés)
-            :param visited: ensemble des nœuds visités
-            :param path: liste contenant le chemin actuel
-            """
+
             visited.add(node)
             path.append(node)
             
