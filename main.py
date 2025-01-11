@@ -1,19 +1,22 @@
 #!/usr/bin/python3
-print("==============================")
-print("Programme gestion des graphes:")
-print("==============================")
-print("(1) Construction d'un graphe orienté/non orienté")
-print("(2) Affichage du graphe")
-print("(3) Calculer la densité du graphe")
-print("(4) Calculer le degré du graphe")
-print("(5) Vérifier si le graphe est eulérien")
-print("(6) Vérifier si le graphe est complet")
-print("(7) Trouver un sous-graphe complet maximal")
-print("(8) Recherche de tous les chemins entre un nœud a et un nœud b")
-print("(9) Recherche du chemin le plus court entre deux nœuds a et b")
-print("(10) Recherche de composantes (fortement) connexes à partir d'un nœud a.")#!
-print("(11) Recherche des composantes 4-connexes dans le graphe")#!
-print("(12) Trouver tous les cycles/circuits dans le graph")#!
+def printApp():
+    print("==============================")
+    print("Programme gestion des graphes:")
+    print("==============================")
+    print("(1) Construction d'un graphe orienté/non orienté")
+    print("(2) Affichage du graphe")
+    print("(3) Calculer la densité du graphe")
+    print("(4) Calculer le degré du graphe")
+    print("(5) Vérifier si le graphe est eulérien")
+    print("(6) Vérifier si le graphe est complet")
+    print("(7) Trouver un sous-graphe complet maximal")
+    print("(8) Recherche de tous les chemins entre un nœud a et un nœud b")
+    print("(9) Recherche du chemin le plus court entre deux nœuds a et b")
+    print("(10) Recherche de composantes (fortement) connexes à partir d'un nœud a.")
+    print("(11) Trouver tous les cycles/circuits dans le graph")
+    print("(12) Vérifier si le graphe contient un cycle/circuit hamiltonien")
+    print("(13) Vérifier si le graphe contient une k-clique (k donné)")
+    print("(14) Trouver une crique maximale dans un graphe G")
 
 class Graph:
     def __init__(self, oriente = False):
@@ -102,10 +105,11 @@ class Graph:
         for voisins in self.listeAdj.values():
             if(self.oriente == False):
                 num_aretes = num_aretes + len(voisins) # calculer la somme des aretes
-                num_aretes = num_aretes // 2 # diviser le nombre d'arete sur 2
-                max_possible_aretes = max_possible_aretes // 2  # Graphe non orienté
             else:
                 num_aretes = num_aretes + len(voisins['succ'])
+        if(self.oriente == False):
+            num_aretes = num_aretes // 2 # diviser le nombre d'arete sur 2
+            max_possible_aretes = max_possible_aretes // 2  # Graphe non orienté
 
         densite = num_aretes / max_possible_aretes
         return densite
@@ -191,7 +195,7 @@ class Graph:
             return True
 
     def estComplet(self):
-        graph=self.listeAdj
+        graph = self.listeAdj
         num_nodes = len(graph.keys())  # Nombre de sommets
         
         # Un graphe avec 0 ou 1 sommet est complet par définition
@@ -202,7 +206,7 @@ class Graph:
             # Vérifier les connexions de chaque sommet
             for node, voisins in graph.items():
                 # Dans un graphe complet, chaque sommet doit être connecté à tous les autres sommets
-                if len(voisins['succ']) != num_nodes - 1 or len(voisins['pred'] != num_nodes):
+                if len(voisins['succ']) != num_nodes - 1 or len(voisins['pred']) != num_nodes - 1:
                     return False
         else:
             # Vérifier les connexions de chaque sommet
@@ -274,113 +278,146 @@ class Graph:
         return min(self.find_all_paths(debut,fin),key=len)
 
     def find_cycles(self):
-        graph=self.listeAdj
-        def dfs(node, parent, visited, path):
+        """
+        Trouve tous les cycles dans un graphe (orienté ou non orienté).
+        :return: Liste des cycles trouvés.
+        """
+        graph = self.listeAdj
 
-            visited.add(node)
+        def dfs(node, parent, visite, path):
+            """
+            Recherche DFS pour détecter les cycles.
+            """
+            visite.add(node)
             path.append(node)
             
-            for neighbor in graph[node]:
-                # Si le voisin n'a pas été visité, continuer la recherche DFS
-                if neighbor not in visited:
-                    dfs(neighbor, node, visited, path)
-                # Si un cycle est trouvé (le voisin est visité mais n'est pas le parent)
-                elif neighbor != parent:
-                    cycle = path[path.index(neighbor):]  # Extraire le cycle
-                    cycles.append(cycle)
-            
+            if self.oriente == True:  # Graphe orienté
+                voisins = graph[node].get('succ', set())
+            else:  # Graphe non orienté
+                voisins = graph[node]
+
+            for voisin in voisins:
+                if voisin not in visite:  # Continuer la recherche DFS
+                    dfs(voisin, node, visite, path)
+                elif voisin != parent:  # Cycle détecté
+                    # Extraire le cycle
+                    cycle_start_index = path.index(voisin)
+                    cycle = path[cycle_start_index:]
+                    # Stocker le cycle sous forme canonique (trié)
+                    cycle_sorted = tuple(sorted(cycle))
+                    if cycle_sorted not in unique_cycles:
+                        unique_cycles.add(cycle_sorted)
+
             # Retour en arrière
             path.pop()
         
-        visited = set()
-        cycles = []
+        visite = set()
+        unique_cycles = set()  # Utilisé pour éliminer les doublons
         
         for node in graph:
-            if node not in visited:
-                dfs(node, None, visited, [])
+            if node not in visite:
+                dfs(node, None, visite, [])
         
-        # Éliminer les doublons (par exemple, [A, B, C] est le même que [B, C, A])
-        unique_cycles = []
-        for cycle in cycles:
-            cycle_set = set(cycle)
-            if cycle_set not in unique_cycles:
-                unique_cycles.append(cycle_set)
-        
+        # Retourner les cycles sous forme de liste de listes
         return [list(cycle) for cycle in unique_cycles]
-
-    def find_k_connected_components(self, k):
-        """
-        Trouve les composantes k-connexes dans un graphe non orienté.
-        
-        :param graph: dict, représentation du graphe sous forme de liste d'adjacence
-        :param k: int, degré de connexion minimum requis
-        :return: list, liste des composantes k-connexes
-        """
-        graph=self.listeAdj
-        def dfs(node, visited):
+    
+    def composantes_k_connexes(self, k=4):
+        def dfs_k_connexes(node, visited, component):
             """
-            Effectue une recherche DFS pour identifier une composante connexe.
-            
-            :param node: noeud actuel
-            :param visited: ensemble des nœuds déjà visités
-            :return: list, la composante connexe trouvée
+            Perform DFS to find k-connected components.
             """
-            stack = [node]
-            component = []
-            
-            while stack:
-                current = stack.pop()
-                if current not in visited:
-                    visited.add(current)
-                    component.append(current)
-                    stack.extend(graph[current] - visited)
-            
-            return component
+            visited.add(node)
+            component.add(node)
+            if self.oriente:
+                neighbors = self.listeAdj[node].get('succ', set())
+            else:
+                neighbors = self.listeAdj[node]
 
-        # Étape 1 : Trouver toutes les composantes connexes
+            for neighbor in neighbors:
+                if neighbor not in visited and len(neighbors) >= k:
+                    dfs_k_connexes(neighbor, visited, component)
+
         visited = set()
         components = []
-        for node in graph:
-            if node not in visited:
-                component = dfs(node, visited)
+        for node in self.listeAdj:
+            if node not in visited and len(self.listeAdj[node]) >= k:
+                component = set()
+                dfs_k_connexes(node, visited, component)
                 components.append(component)
 
-        # Étape 2 : Filtrer les composantes k-connexes
-        k_connected_components = []
-        for component in components:
-            # Construire le sous-graphe de la composante
-            subgraph = {n: graph[n] & set(component) for n in component}
-            
-            # Vérifier si chaque nœud a au moins k connexions
-            if all(len(neighbors) >= k for neighbors in subgraph.values()):
-                k_connected_components.append(component)
+        return components
 
-        return k_connected_components
+    def hamiltonian_cycle(self):
+        def backtrack(node, visited, path):
+            path.append(node)
+            visited.add(node)
 
+            if len(visited) == len(self.listeAdj):  # All nodes visited
+                if path[0] in (self.listeAdj[node] if not self.oriente else self.listeAdj[node].get('succ', set())):
+                    return path + [path[0]]  # Return to start node
+                visited.remove(node)
+                path.pop()
+                return None
 
+            neighbors = self.listeAdj[node] if not self.oriente else self.listeAdj[node].get('succ', set())
+            for neighbor in neighbors:
+                if neighbor not in visited:
+                    result = backtrack(neighbor, visited, path)
+                    if result:
+                        return result
 
-#! class Graph_oriente:
-#    def __init__(self):
-#         self.sommets={}
-#     def ajoutSommet(self,s):
-#         if s not in self.sommets.keys():
-#             self.sommets[s]={'suc':set(),'pred':set()}
+            visited.remove(node)
+            path.pop()
+            return None
 
+        for start_node in self.listeAdj:
+            result = backtrack(start_node, set(), [])
+            if result:
+                return result
+        return None
 
-#! Saisie du choix d'algorithme
-# print("Entrer votre choix:")
-# choix = None
-# while choix is None:
-#     try:
-#         choix = int(input(""))
-#         if choix<1 or choix >12:
-#             choix=None
-#             raise ValueError
-#     except ValueError:
-#         print("Nombre invalid!")
+    def has_k_clique(self, k):
+        from itertools import combinations
+        nodes = list(self.listeAdj.keys())
+
+        for subset in combinations(nodes, k):
+            # Check for k-clique in directed or undirected graph
+            if all(
+                (node2 in self.listeAdj[node1] if not self.oriente else node2 in self.listeAdj[node1].get('succ', set()))
+                and (node1 in self.listeAdj[node2] if not self.oriente else node1 in self.listeAdj[node2].get('succ', set()))
+                for node1 in subset for node2 in subset if node1 != node2
+            ):
+                return True
+        return False
+
+    def maximal_clique(self):
+        def is_clique(nodes):
+            return all(
+                (node2 in self.listeAdj[node1] if not self.oriente else node2 in self.listeAdj[node1].get('succ', set()))
+                and (node1 in self.listeAdj[node2] if not self.oriente else node1 in self.listeAdj[node2].get('succ', set()))
+                for node1 in nodes for node2 in nodes if node1 != node2
+            )
+
+        def backtrack(curr_clique, candidates):
+            if not candidates:
+                return curr_clique
+
+            max_clique = curr_clique[:]
+            for node in candidates:
+                new_clique = curr_clique + [node]
+                if is_clique(new_clique):
+                    remaining_candidates = [n for n in candidates if n != node]
+                    candidate_clique = backtrack(new_clique, remaining_candidates)
+                    if len(candidate_clique) > len(max_clique):
+                        max_clique = candidate_clique
+
+            return max_clique
+
+        nodes = list(self.listeAdj.keys())
+        return backtrack([], nodes)
+
 
 def constGraph():
-
     """
     Fonction pour construire un graphe à partir de l'entrée utilisateur.
     Retourne un graphe sous forme de dictionnaire d'adjacence.
@@ -419,92 +456,83 @@ def constGraph():
 
 
 
+app_graphe = Graph(False)
 
-# Exemple d'utilisation
-graph1,graph2=Graph(False),Graph(False)
+import os
+# ! Saisie du choix d'algorithme
+print("Entrer votre choix:")
+choix = None
+while choix is None:
+    try:
+        printApp()
+        choix = int(input("Entrer un nombre entre 1 et 12:"))
+        if choix<1 or choix >12:
+            choix=None
+            raise ValueError
+        else:
+            match choix:
+                case 1:
+                    app_graphe = constGraph()
 
-graph1.listeAdj = {
-    'A': {'B', 'C', 'D'},
-    'B': {'A', 'C', 'D'},
-    'C': {'A', 'B', 'D'},
-    'D': {'A', 'B', 'C'}
-}
+                case 2:
+                    app_graphe.afficherListeAdj()
+                    if app_graphe.oriente == False:
+                        app_graphe.afficherGraphe()
 
-graph2.listeAdj = {
-    'A': {'B', 'C'},
-    'B': {'A', 'C'},
-    'C': {'A', 'B'},
-    'D': {'C'}
-}
+                case 3:
+                    print(app_graphe.densiteGraphe())
 
-graph=Graph(False)
+                case 4:
+                    print(app_graphe.degreeGraphe())
 
-graph.listeAdj = {
-    'A': {'B', 'C'},
-    'B': {'A','C','D'},
-    'C': {'A','C'},
-    'D': {'B', 'E'},
-    'E': {'D'}
-}
+                case 5:
+                    print(app_graphe.est_eulerian())
 
+                case 6:
+                    print(app_graphe.estComplet())
 
-# print("Graphe 1 est complet :", graph1.estComplet())  # True
-# print("Graphe 2 est complet :", graph2.estComplet())  # False
+                case 7:
+                    print(app_graphe.sousGrapheComplet())
 
+                case 8:
+                    deb = input("Entrer le 1er noeud:")
+                    fin = input("Entrer le 2eme noeud:")
+                    paths = app_graphe.find_all_paths(deb,fin)
+                    if len(paths)<1:
+                        print("pas de chemin entre ces deux sommets")
+                    else:
+                        print(paths)
 
-# Exemple d'utilisation
-g=Graph(False)
-g.listeAdj = {
-    'A': {'B', 'C'},
-    'B': {'A', 'D', 'E'},
-    'C': {'A', 'F'},
-    'D': {'B'},
-    'E': {'B', 'F'},
-    'F': {'C', 'E'}
-}
+                case 9:
+                    deb = input("Entrer le 1er noeud:")
+                    fin = input("Entrer le 2eme noeud:")
+                    paths = app_graphe.cheminPlusCourt(deb,fin)
+                    if len(paths)<1:
+                        print("pas de chemin entre ces deux sommets")
+                    else:
+                        print(paths)
 
-# start_node = 'A'
-# end_node = 'C'
-
-# paths = graph2.find_all_paths(start_node, end_node)
-# print(f"Tous les chemins de {start_node} à {end_node} :")
-# for path in paths:
-#     print(" -> ".join(path))
-
-# print(g.cheminPlusCourt('A','F'))
-
-
-# Exemple d'utilisation
-graph3=Graph(False)
-graph3.listeAdj = {
-    'A': {'B', 'C'},
-    'B': {'A', 'C', 'D'},
-    'C': {'A', 'B', 'E'},
-    'D': {'B', 'E'},
-    'E': {'C', 'D'}
-}
-
-# cycles = graph3.find_cycles()
-# print("Cycles trouvés :")
-# for cycle in cycles:
-#     print(" -> ".join(cycle))
+                case 10:
+                    k = int(input("Donner k(k=4 si k non fournis):"))
+                    if type(k) == int:
+                        print(app_graphe.composantes_k_connexes(k))
+                    else:
+                        print(app_graphe.composantes_k_connexes())
 
 
-# Exemple d'utilisation
-graph4=Graph(False)
-graph4.listeAdj = {
-    'A': {'B', 'C', 'D', 'E'},
-    'B': {'A', 'C', 'D'},
-    'C': {'A', 'B', 'D'},
-    'D': {'A', 'B', 'C', 'E'},
-    'E': {'A', 'D'}
-}
+                case 11:
+                    print(app_graphe.find_cycles())
 
-# k = 4  # Niveau de connexité recherché
-# k_connected = graph4.find_k_connected_components(k)
+                case 12:
+                    print(app_graphe.hamiltonian_cycle())
 
-# print(f"Composantes {k}-connexes :")
-# for component in k_connected:
-#     print(component)
+                case 13:
+                    print(app_graphe.has_k_clique())
 
-# graph3.afficherGraphe()
+                case 14:
+                    print(app_graphe.maximal_clique())
+        choix = None
+        os.system("clear")
+    except ValueError:
+        print("Nombre invalid!")
+
