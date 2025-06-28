@@ -1,33 +1,51 @@
-# Programme de Gestion de Graphes
+# 🧠 Programme de Gestion de Graphes
 
-Un outil en ligne de commande pour créer et analyser des graphes orientés ou non orientés.  
-Vous pouvez construire votre graphe, l’afficher (liste d’adjacence et visualisation), et exécuter divers algorithmes et tests :
+Un outil en ligne de commande pour **créer**, **analyser** et **visualiser** des **graphes orientés ou non orientés**.
 
-- **Construction** d’un graphe orienté ou non orienté  
-- **Affichage** de la liste d’adjacence  
-- **Visualisation** graphique (via `networkx` + `matplotlib`)  
-- **Densité** du graphe  
-- **Degré** (maximum) du graphe  
-- **Test eulérien** (eulerian)  
-- **Test de complétude**  
-- **Sous‐graphe complet maximal**  
-- **Tous les chemins** entre deux nœuds  
-- **Plus court chemin** entre deux nœuds (via recherche exhaustive)  
-- **Composantes k-connexes**  
-- **Détection de cycles**  
-- **Cycle Hamiltonien**  
-- **Test de k-clique**  
-- **Clique maximale**  
+Ce projet a été réalisé dans le cadre du module **Algorithmique Avancée et Complexité** (AAC), en Master 1 Bio-Informatique à l’Université, et est accompagné d’un rapport détaillé (`AAC_Projet.pdf`) expliquant les fondements théoriques, les algorithmes utilisés et leurs applications, notamment en bio-informatique.
+
+---
+
+## ✨ Fonctionnalités
+
+- ✅ Construction d’un graphe (orienté ou non orienté)  
+- 📋 Affichage de la **liste d’adjacence**  
+- 📊 **Visualisation graphique** (`networkx` + `matplotlib`)  
+- 📈 Calcul de la **densité** du graphe  
+- 📏 Calcul du **degré maximal**  
+- 🔁 **Test eulérien**  
+- 🔎 **Vérification de complétude**  
+- 🧩 Détection d’un **sous-graphe complet maximal**  
+- 🧭 Recherche de **tous les chemins** entre deux sommets  
+- 🚀 **Plus court chemin** (recherche exhaustive)  
+- 🧱 Détection des **composantes connexes / k-connexes**  
+- 🔄 Détection de **cycles**  
+- 🧮 Vérification de **cycle Hamiltonien**  
+- 📌 Test de **k-clique**  
+- 🧠 Recherche de **clique maximale**
+
+---
+
+## 📄 Rapport
+
+Le fichier [`AAC_Projet.pdf`](AAC_Projet.pdf) contient :
+
+- Une **introduction complète à la théorie des graphes**
+- Des **définitions formelles** (graphes simples, orientés, bipartis, etc.)
+- Une **explication des représentations mémoire** (matrice/liste d’adjacence)
+- L’**implémentation d’algorithmes** avec leur **complexité**
+- Une **étude expérimentale** des performances (temps d'exécution)
+- Une **analyse des applications en bio-informatique** (génomique, réseaux PPI, etc.)
 
 ---
 
 ## 📦 Prérequis
 
-- Python 3.7+  
-- (Optionnel pour la visualisation)
+- Python 3.7+
+- Pour la visualisation (optionnelle) :
 
-  ```bash
-  pip install networkx matplotlib
+```bash
+pip install networkx matplotlib
 ## Exemple rapide :
 ```
   ==============================
