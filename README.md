@@ -77,8 +77,8 @@ pip install networkx matplotlib
   Entrez le nombre de sommets : 3
   - Sommet 1: A
   - Sommet 2: B
-```
   - Sommet 3: C
   Entrez le nombre d'arêtes : 2
   - Arête : A B
   - Arête : B C
+```
